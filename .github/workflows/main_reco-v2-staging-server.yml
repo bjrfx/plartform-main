@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: npm install, build, and test
+      - name: Install dependencies, build, and test
         run: |
           npm install
           npm run build --if-present
@@ -26,13 +26,14 @@ jobs:
         working-directory: ./frontend  # Ensure npm commands run inside the frontend folder
 
       - name: Zip artifact for deployment
-        run: cd frontend/dist && zip -r ../../release.zip .
+        run: zip -r release.zip dist
+        working-directory: ./frontend  # Only zip the built frontend files
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: release.zip
+          path: ./frontend/release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -49,8 +50,8 @@ jobs:
         with:
           name: node-app
 
-      - name: Create deployment directory
-        run: mkdir -p /home/site/wwwroot
+      - name: Ensure wwwroot directory exists
+        run: mkdir -p /home/site/wwwroot/
 
       - name: Unzip artifact for deployment
         run: unzip -o release.zip -d /home/site/wwwroot/
@@ -62,4 +63,4 @@ jobs:
           app-name: 'reco-v2-staging-server'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1CC20BFA7E4B48F7B4AD633B07D25C49 }}
-          package: .
+          package: /home/site/wwwroot/
