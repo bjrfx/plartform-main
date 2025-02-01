@@ -20,17 +20,16 @@ jobs:
           node-version: '20.x'
 
       - name: Install dependencies, build, and test
+        working-directory: frontend  # Ensure correct indentation and valid path
         run: |
           npm install
           npm run build --if-present
           npm run test --if-present
-        working-directory: ./frontend
 
       - name: Zip artifact for deployment
+        working-directory: frontend/dist  # Ensure correct directory reference
         run: |
-          cd frontend/dist
-          zip -r ../../../release.zip .
-        working-directory: .
+          zip -r ../../release.zip .
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -69,13 +68,13 @@ jobs:
           sudo unzip -o release.zip -d /home/site/wwwroot-temp/
           sudo mv /home/site/wwwroot-temp/* /home/site/wwwroot/
           sudo rm -rf /home/site/wwwroot-temp
-          ls -la /home/site/wwwroot  # Verify the files are directly in wwwroot
+          ls -la /home/site/wwwroot  # Verify extracted files
 
       - name: Restart Azure Web App
         run: |
           az webapp restart --name reco-v2-staging-server --resource-group <your-resource-group> --subscription <your-subscription-id>
 
-      - name: 'Deploy to Azure Web App'
+      - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
