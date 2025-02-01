@@ -27,7 +27,7 @@ jobs:
 
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
-        working-directory: ./frontend  # Zip the contents of the frontend folder
+        working-directory: ./frontend/dist  # Zip the contents of the frontend folder
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -60,4 +60,4 @@ jobs:
           app-name: 'reco-v2-staging-server'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1CC20BFA7E4B48F7B4AD633B07D25C49 }}
-          package: ./frontend
+          package: ./frontend/dist
