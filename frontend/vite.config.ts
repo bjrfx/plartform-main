@@ -16,7 +16,7 @@ export default defineConfig({
         emptyOutDir: true, // Clear the dist folder before building
     },
     server: {
-        host: process.env.VITE_HOST || '0.0.0.0', // Bind to all network interfaces
+        host: process.env.VITE_HOST || '20.48.204.5', // Bind to all network interfaces
         port: parseInt(process.env.VITE_PORT || "5173", 10), // Match Docker's exposed port
         watch: {
             usePolling: true, // Necessary for file change detection in Docker
