@@ -23,7 +23,6 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-          npm run dev --if-present
         working-directory: ./frontend  # Make sure npm commands run inside the frontend folder
 
       - name: Zip artifact for deployment
