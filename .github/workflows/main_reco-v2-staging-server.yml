@@ -23,29 +23,23 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-        working-directory: ./frontend  # Make sure npm commands run inside the frontend folder
-
-      - name: List contents before zipping
-        run: ls -la ./frontend  # Verify that the frontend folder contains files to zip
+        working-directory: ./frontend  # Ensure npm commands run inside the frontend folder
 
       - name: Zip artifact for deployment
-        run: zip -r release.zip ./frontend/*  # Zip the contents of the frontend folder
-
-      - name: List contents after zipping
-        run: ls -la  # Verify that release.zip was created
+        run: zip release.zip ./* -r
+        working-directory: ./frontend  # Zip the contents of the frontend folder
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: node-app  # The artifact name you're using for download
-          path: release.zip  # The path to the file you are uploading
+          name: node-app
+          path: ./frontend/release.zip
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     environment:
       name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
       - name: Checkout repository (required to access secrets)
@@ -54,10 +48,10 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: node-app  # Make sure this matches the upload artifact name
+          name: node-app
 
       - name: Unzip artifact for deployment
-        run: unzip release.zip
+        run: unzip -o release.zip
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -66,4 +60,4 @@ jobs:
           app-name: 'reco-v2-staging-server'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1CC20BFA7E4B48F7B4AD633B07D25C49 }}
-          package: ./frontend  # You might need to specify ./frontend here if it's part of the zip package
+          package: .
