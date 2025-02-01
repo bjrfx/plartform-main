@@ -22,8 +22,8 @@ jobs:
         run: |
           npm install
           npm run build 
-          # npm run test --if-present
-        working-directory: ./frontend  # Ensure npm commands run inside the frontend folder
+          npm run test --if-present
+        working-directory: ./frontend/dist  # Ensure npm commands run inside the frontend folder
 
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
