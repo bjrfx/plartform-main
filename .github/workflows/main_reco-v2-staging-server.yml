@@ -11,22 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Node.js version
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
 
-      - name: npm install, build, and test
+      - name: Install dependencies, build, and test
         run: |
           npm install
           npm run build --if-present
           npm run test --if-present
-        working-directory: ./frontend  # Ensure npm commands run inside the frontend folder
+        working-directory: ./frontend
 
       - name: Zip artifact for deployment
-        run: cd frontend/dist && zip -r ../../release.zip .
+        run: |
+          cd frontend/dist
+          zip -r ../../../release.zip .
+        working-directory: .
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -49,11 +53,27 @@ jobs:
         with:
           name: node-app
 
-      - name: Create deployment directory
-        run: sudo mkdir -p /home/site/wwwroot
+      - name: Debug: Check if release.zip exists
+        run: |
+          ls -la
+          test -f release.zip && echo "release.zip exists" || echo "release.zip is missing"
 
-      - name: Unzip artifact for deployment
-        run: sudo unzip -o release.zip -d /home/site/wwwroot/
+      - name: Ensure deployment directory exists
+        run: |
+          sudo mkdir -p /home/site/wwwroot
+          sudo chmod -R 777 /home/site/wwwroot
+
+      - name: Unzip and move files to wwwroot
+        run: |
+          sudo rm -rf /home/site/wwwroot/*
+          sudo unzip -o release.zip -d /home/site/wwwroot-temp/
+          sudo mv /home/site/wwwroot-temp/* /home/site/wwwroot/
+          sudo rm -rf /home/site/wwwroot-temp
+          ls -la /home/site/wwwroot  # Verify the files are directly in wwwroot
+
+      - name: Restart Azure Web App
+        run: |
+          az webapp restart --name reco-v2-staging-server --resource-group <your-resource-group> --subscription <your-subscription-id>
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -62,4 +82,4 @@ jobs:
           app-name: 'reco-v2-staging-server'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1CC20BFA7E4B48F7B4AD633B07D25C49 }}
-          package: .
+          package: /home/site/wwwroot
