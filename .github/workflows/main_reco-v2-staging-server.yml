@@ -24,13 +24,13 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-        working-directory: ./frontend  # Ensure commands run inside the frontend folder
+        working-directory: ./frontend
 
       - name: Zip artifact for deployment
         run: |
           cd frontend/dist
-          zip -r ../../release.zip .
-        working-directory: .  # Ensure correct working directory
+          zip -r ../../../release.zip .
+        working-directory: .
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -53,13 +53,21 @@ jobs:
         with:
           name: node-app
 
-      - name: Ensure clean deployment directory
-        run: sudo rm -rf /home/site/wwwroot/*
+      - name: Debug: List files in current directory
+        run: ls -la
+
+      - name: Debug: Check if release.zip exists
+        run: test -f release.zip && echo "release.zip exists" || echo "release.zip is missing"
+
+      - name: Ensure deployment directory exists
+        run: |
+          sudo mkdir -p /home/site/wwwroot
+          sudo chmod -R 777 /home/site/wwwroot
 
       - name: Unzip artifact for deployment
         run: |
           sudo unzip -o release.zip -d /home/site/wwwroot/
-          ls -la /home/site/wwwroot  # Verify extracted files
+          ls -la /home/site/wwwroot  # Verify files are extracted correctly
 
       - name: Restart Azure Web App
         run: |
