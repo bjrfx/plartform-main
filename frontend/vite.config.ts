@@ -11,6 +11,10 @@ const __dirname = path.dirname(__filename);
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [vue()],
+    build: {
+        outDir: 'dist', // Ensure the build files are output in the "dist" folder
+        emptyOutDir: true, // Clear the dist folder before building
+    },
     server: {
         host: process.env.VITE_HOST || '0.0.0.0', // Bind to all network interfaces
         port: parseInt(process.env.VITE_PORT || "5173", 10), // Match Docker's exposed port
