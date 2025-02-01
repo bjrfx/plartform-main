@@ -1,0 +1,5 @@
+[mysqld]
+pid-file=/var/run/mysqld/mysqld.pid
+ssl-ca=/path/to/ca.pem
+ssl-cert=/path/to/server-cert.pem
+ssl-key=/path/to/server-key.pem

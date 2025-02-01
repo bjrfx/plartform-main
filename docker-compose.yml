@@ -1,0 +1,124 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/nginx/nginx.conf.template:/etc/nginx/nginx.conf:ro # Correct mount
+    depends_on:
+      - backend
+      - frontend
+    restart: always
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - ./backend:/var/www/html
+      - ./backend/storage:/var/www/html/storage
+      - ./backend/bootstrap/cache:/var/www/html/bootstrap/cache
+    environment:
+      DOCKER_ENV: "true"
+      #APP_NAME: "${BACKEND_APP_NAME}"
+      #APP_ENV: "${BACKEND_APP_ENV}"
+      #APP_KEY: "${BACKEND_APP_KEY}"
+      #APP_DEBUG: "${BACKEND_APP_DEBUG}"
+      #APP_TIMEZONE: "${BACKEND_APP_TIMEZONE}"
+      #APP_URL: "${BACKEND_APP_URL}"
+      #DB_CONNECTION: "${BACKEND_DB_CONNECTION}"
+      #DB_HOST: "${BACKEND_DB_HOST}"
+      #DB_PORT: "${BACKEND_DB_PORT}"
+      #DB_DATABASE: "${BACKEND_DB_DATABASE}"
+      #DB_USERNAME: "${BACKEND_DB_USERNAME}"
+      #DB_PASSWORD: "${BACKEND_DB_PASSWORD}"
+    env_file:
+      - ./backend/.env
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - mysql
+      - redis
+    restart: always
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      target: ${DOCKER_BUILD_TARGET} # Explicitly use root .env to define the stage
+    ports:
+      - "5173:5173"
+      #- "8081:8080"
+    volumes:
+      - ./frontend:/app
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/.env:/app/.env
+      - /app/node_modules # Prevent overwriting node_modules
+    environment:
+      CHOKIDAR_USEPOLLING: "true" # Enable polling for file changes
+      #VITE_APP_ENV: "${FRONTEND_VITE_APP_ENV}"
+      #VUE_APP_API_BASE_URL: "${FRONTEND_VUE_APP_API_BASE_URL}"
+      #NODE_ENV: "${FRONTEND_NODE_ENV}"
+    command: [ "npm", "run", "dev", "--", "--host" ] # Ensure Vite starts
+    env_file:
+      - ./frontend/.env
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: always
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      TZ: UTC
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker:/docker-entrypoint-initdb.d
+      - /usr/share/zoneinfo:/usr/share/zoneinfo:ro
+      - ./docker/populate_timezones.sh:/docker-entrypoint-initdb.d/populate_timezones.sh:ro
+      #- ./docker/my.cnf:/etc/mysql/my.cnf
+      - ./docker/${MYSQL_CONFIG}.my.cnf:/etc/mysql/my.cnf:ro
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    env_file:
+      - ./.env
+    networks:
+      - app-network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+  redis_data:
+
+networks:
+  app-network:
+    name: app-network-reco-v2  # Unique name
+    driver: bridge

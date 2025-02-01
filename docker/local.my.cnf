@@ -1,0 +1,4 @@
+[mysqld]
+pid-file=/var/lib/mysql/mysqld.pid
+require_secure_transport=OFF
+mysqlx=0
