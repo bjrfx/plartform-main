@@ -60,4 +60,4 @@ jobs:
           app-name: 'reco-v2-staging-server'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1CC20BFA7E4B48F7B4AD633B07D25C49 }}
-          package: ./frontend/release.zip
+          package: ./frontend
