@@ -79,6 +79,7 @@ jobs:
 
       - name: Post Deployment Commands
         run: |
+          continue-on-error: true 
           php artisan migrate --force
           php artisan config:cache
           php artisan route:cache
