@@ -39,6 +39,7 @@ jobs:
 
       - name: Ensure correct permissions for Laravel storage & cache
         run: |
+          mkdir -p storage bootstrap/cache
           chmod -R 777 storage bootstrap/cache
 
       - name: Zip artifact for deployment
