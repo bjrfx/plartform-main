@@ -1,0 +1,56 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Step 2: Log in to Azure
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Step 3: Log in to ACR
+      - name: Log in to ACR
+        run: |
+          echo "${{ secrets.AZURE_CLIENT_SECRET }}" | docker login recov2stagingcontainer.azurecr.io \
+            -u ${{ secrets.AZURE_CLIENT_ID }} \
+            --password-stdin
+
+      # Step 4: Build and Push Frontend Docker Image
+      - name: Build and Push Frontend Docker Image
+        run: |
+          docker build --no-cache -t recov2stagingcontainer.azurecr.io/frontend:latest -f frontend/Dockerfile ./frontend
+          docker push recov2stagingcontainer.azurecr.io/frontend:latest
+
+      # Step 5: Deploy Frontend to Azure Web App
+      - name: Deploy Frontend to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: reco-v2-staging-server
+          images: recov2stagingcontainer.azurecr.io/frontend:latest
+
+      # Step 6: Build and Push Backend Docker Image
+      - name: Build and Push Backend Docker Image
+        run: |
+          docker build --no-cache -t recov2stagingcontainer.azurecr.io/backend:latest -f backend/Dockerfile ./backend
+          docker push recov2stagingcontainer.azurecr.io/backend:latest
+
+      # Step 7: Deploy Backend to Azure Web App
+      - name: Deploy Backend to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: reco-v2-staging-server
+          images: recov2stagingcontainer.azurecr.io/backend:latest

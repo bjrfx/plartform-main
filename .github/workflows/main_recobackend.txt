@@ -1,4 +1,7 @@
-name: Build and Deploy Laravel App to Azure Web App - recobackend
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy PHP app to Azure Web App - recobackend
 
 on:
   push:
@@ -10,17 +13,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # Required for actions/checkout
+      contents: read #This is required for actions/checkout
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, bcmath, intl, pdo_mysql
 
       - name: Check if composer.json exists
         id: check_files
@@ -28,23 +29,14 @@ jobs:
         with:
           files: 'composer.json'
 
-      - name: Install Composer Dependencies
+      - name: Run composer install if composer.json exists
         if: steps.check_files.outputs.files_exists == 'true'
-        run: |
-          composer install --no-dev --prefer-dist --no-progress --optimize-autoloader
-          php artisan config:clear
-          php artisan cache:clear
-          php artisan view:cache
-          php artisan route:cache
-
-      - name: Ensure correct permissions for Laravel storage & cache
-        run: |
-          chmod -R 777 storage bootstrap/cache
+        run: composer validate --no-check-publish && composer install --prefer-dist --no-progress
 
       - name: Zip artifact for deployment
-        run: zip -r release.zip . -x ".git/*" "node_modules/*" "vendor/*" "tests/*"
+        run: zip release.zip ./* -r
 
-      - name: Upload artifact for deployment
+      - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: php-app
@@ -65,8 +57,8 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
-
-      - name: Deploy to Azure Web App
+      
+      - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
@@ -74,10 +66,3 @@ jobs:
           slot-name: 'Production'
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4AF1FC7F263A421891AE34121937C73C }}
-
-      - name: Post Deployment Commands
-        run: |
-          php artisan migrate --force
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
