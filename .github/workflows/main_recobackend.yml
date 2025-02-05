@@ -31,7 +31,7 @@ jobs:
       - name: Install Composer Dependencies
         if: steps.check_files.outputs.files_exists == 'true'
         run: | 
-        cd backend
+          cd backend
           composer install --no-dev --prefer-dist --no-progress --optimize-autoloader
           php artisan config:clear
           php artisan cache:clear
